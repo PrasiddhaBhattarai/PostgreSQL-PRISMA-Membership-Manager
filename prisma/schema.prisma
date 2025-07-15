@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// models
+
+model Member {
+  // @id => primary key
+  id    Int    @id @default(autoincrement()) //scalar field
+  name  String
+  email String @unique
+  // one member can have multiple memberships
+  memberships Membership[] //this is relation field, not db column
+  // if one to one
+  // membership Membership?
+}
+
+model Membership {
+  id        Int      @id @default(autoincrement())
+  //Prisma saves the .toISOString() version (UTC) to your DB.
+  startDate DateTime
+  endDate   DateTime
+  // This is a special Prisma field that connects the Membership to the Member table
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  // memberId as foreign key
+  memberId Int //foreign key field
+  // if one to one
+  // memberId Int @unique
+}
+
+// (*)_NOTE_
+// You only need to define the @relation directive once, typically on the side that has the foreign key (Membership in your case).
+// 
+// But you can:
+//  ->Query in both directions
+//  ->Create in both directions
+//  ->Filter in both directions
+// 
+// This is because,
+// You only need to define one side explicitly with @relation, and Prisma will:
+//   ->Generate the opposite side automatically.
+//   ->Support full nested writes (create, connect, update, etc.) in both directions.
+//   ->Allow queries and filters based on related model fields in both directions.
+
+
+
+// below examples are applicable in Memberships -> Models as well
+
+// what does memberships Memberships[],  do?
+//
+// 1. Declares the Cardinality of the Relationship
+// -> like one to many
+//
+// 2. Enables Relation Queries in Prisma
+// -> Get a Member with all their Memberships:-
+//  -> const member = await prisma.member.findUnique({
+//       where: { id: 1 },
+//       include: {
+//        memberships: true, // ← This uses the virtual field
+//       },
+//     }
+// 
+// 3. Supports Nested Writes (Create/Update Related Records)
+// -> Here although member.create is used, the memberships field is used to create a related Membership at the same time.
+// -> await prisma.member.create({
+//       data: {
+//         name: 'John Doe',
+//         email: 'john@example.com',
+//         memberships: {
+//           create: [
+//             {
+//               startDate: new Date(),
+//               endDate: new Date('2025-01-01'),
+//             },
+//           ],
+//         },
+//       },
+//     })
+// 
+//  4. Allows Filtering by Related Data
+// -> here, checks the condition in membership and only returns the members with matched condition (do not return membership data)
+// -> const members = await prisma.member.findMany({
+//      where: {
+//        memberships: {
+//          some: {
+//            endDate: {
+//              gt: new Date(),
+//            },
+//          },
+//        },
+//      },
+//    })
+// -> if you want to Also Get the Matching Memberships, use include:
