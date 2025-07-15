@@ -1,3 +1,4 @@
+** .env is included because it doesn't include sensitive information **
 # 🧾Postgres Membership Management API with Prisma
 
 A Node.js RESTful API for managing members and their memberships using PostgreSQL and Prisma ORM. This project demonstrates a clean architecture with Express.js, Prisma, and modular service/controller layers.
